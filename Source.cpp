@@ -58,21 +58,20 @@ BOOL GetScaling(HWND hWnd, UINT* pnX, UINT* pnY)
 struct arrowline {
 	POINT start;
 	POINT end;
-	void draw(HDC hdc, double size) {
+	double arrowsize;
+	void draw(HDC hdc) {
 		double slopy, cosy, siny;
-		double Par = size;
-		slopy = atan2((start.y - end.y),
-			(start.x - end.x));
+		double Par = arrowsize;
+		slopy = atan2(end.y - start.y, end.x - start.x);
 		cosy = cos(slopy);
 		siny = sin(slopy);
-		MoveToEx(hdc, start.x, start.y, 0);
-		LineTo(hdc, end.x, end.y);
 		MoveToEx(hdc, end.x, end.y, 0);
-		LineTo(hdc, end.x + int(Par * cosy - (Par / 2.0 * siny)),
-			end.y + int(Par * siny + (Par / 2.0 * cosy)));
-		LineTo(hdc, end.x + int(Par * cosy + Par / 2.0 * siny),
-			end.y - int(Par / 2.0 * cosy - Par * siny));
-		LineTo(hdc, end.x, end.y);
+		LineTo(hdc, start.x, start.y);
+		MoveToEx(hdc, start.x, start.y, 0);
+		POINT point[3] = { start.x, start.y, start.x + int(Par * cosy + Par / 3.0 * siny), start.y - int(Par / 3.0 * cosy - Par * siny) , start.x + int(Par * cosy - (Par / 3.0 * siny)), start.y + int(Par * siny + (Par / 3.0 * cosy)) };
+		HBRUSH hBrush = (HBRUSH)SelectObject(hdc, GetStockObject(BLACK_BRUSH));
+		Polygon(hdc, point, 3);
+		SelectObject(hdc, hBrush);
 	}
 };
 
@@ -105,6 +104,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				l[i].start.y = rand() % rect.bottom;
 				l[i].end.x = rand() % rect.right;
 				l[i].end.y = rand() % rect.bottom;
+				l[i].arrowsize = (double)(50 + rand() % 50);
 			}
 			InvalidateRect(hWnd, 0, TRUE);
 		}
@@ -115,7 +115,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		HDC hdc = BeginPaint(hWnd, &ps);
 		for (int i = 0; i < _countof(l); i++)
 		{
-			l[i].draw(hdc, rand()%100);
+			l[i].draw(hdc);
 		}
 		EndPaint(hWnd, &ps);
 	}
